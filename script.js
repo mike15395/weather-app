@@ -1,4 +1,5 @@
 const APIkey = "57c6231db7bd4bde9b0101357241212";
+const geoAPIkey = "ed42ebc293d2455ab670d9cfe57b61f1";
 const airQuality = "yes";
 
 async function getWeatherData(location) {
@@ -9,28 +10,47 @@ async function getWeatherData(location) {
   return response;
 }
 
-// document.querySelector(".weather-details").style.display = "none";
-
 let locationInput = document.getElementById("location-input");
 let weatherBtn = document.getElementById("weather-button");
 
-let locationDetails = document.getElementById("location");
-let temp = document.getElementById("temprature");
-let status = document.getElementById("status");
-let humidity = document.getElementById("humidity-value");
-let statusImage = document.getElementById("status-img");
-let windSpeed = document.getElementById("wind-speed-value");
 weatherBtn.addEventListener("click", displayWeatherData);
 let loading = "<div>Loading...</div>";
 
-async function displayWeatherData() {
+//get current position of user
+const successCallback = async (position) => {
+  console.log(position.coords.latitude);
+  console.log(position.coords.longitude);
+  const response = await fetchCityFromCoordinates(
+    position.coords.latitude,
+    position.coords.longitude
+  );
+  const data = await response.json();
+  console.log(data?.features[0]?.properties?.city, "response");
+  displayWeatherData(data?.features[0]?.properties?.city);
+};
+
+const errorCallback = (error) => {
+  console.log(error);
+};
+navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+
+async function fetchCityFromCoordinates(lat, long) {
+  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${long}&apiKey=${geoAPIkey}`;
+  const response = await fetch(url);
+  return response;
+}
+
+async function displayWeatherData(geoLocationInput) {
   document.querySelector(".weather-details").innerHTML = loading;
-  const response = await getWeatherData(locationInput.value);
+  console.time("fetching api data");
+  const response = await getWeatherData(
+    locationInput.value ? locationInput.value : geoLocationInput
+  );
   const weatherResult = await response.json();
+  console.timeEnd("fetching api data");
   console.log(response, "response");
   console.log(weatherResult, "response-json");
   if (response.status === 200) {
-    // document.querySelector(".weather-details").style.display = "block";
     const weatherResultData = weatherResult?.current;
     document.querySelector(
       ".weather-details"
@@ -57,7 +77,6 @@ async function displayWeatherData() {
                     }</span>%</div>
                 </div>`;
   } else {
-    // document.querySelector(".weather-details").style.display = "block";
     document.querySelector(
       ".weather-details"
     ).innerHTML = `<div>${weatherResult?.error?.message}</div>`;
