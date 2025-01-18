@@ -1,5 +1,6 @@
 const APIkey = "57c6231db7bd4bde9b0101357241212";
 const geoAPIkey = "ed42ebc293d2455ab670d9cfe57b61f1";
+const googleMapsApiKey = "AIzaSyAX5DYzrgh7IjqvqRx13JOtklgsA9X0jWA";
 const airQuality = "yes";
 
 async function getWeatherData(location) {
@@ -20,6 +21,7 @@ let loading = "<div>Loading...</div>";
 const successCallback = async (position) => {
   console.log(position.coords.latitude);
   console.log(position.coords.longitude);
+  initMap(position.coords.latitude, position.coords.longitude);
   const response = await fetchCityFromCoordinates(
     position.coords.latitude,
     position.coords.longitude
@@ -50,6 +52,7 @@ async function displayWeatherData(geoLocationInput) {
   console.timeEnd("fetching api data");
   console.log(response, "response");
   console.log(weatherResult, "response-json");
+  initMap(weatherResult?.location?.lat, weatherResult?.location?.lon);
   if (response.status === 200) {
     const weatherResultData = weatherResult?.current;
     document.querySelector(
@@ -81,4 +84,30 @@ async function displayWeatherData(geoLocationInput) {
       ".weather-details"
     ).innerHTML = `<div>${weatherResult?.error?.message}</div>`;
   }
+}
+
+// Initialize and add the map
+let map;
+
+async function initMap(latitude, longitude) {
+  // The location of Uluru
+  const position = { lat: latitude, lng: longitude };
+  // Request needed libraries.
+  //@ts-ignore
+  const { Map } = await google.maps.importLibrary("maps");
+  const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+
+  // The map, centered at Uluru
+  map = new Map(document.getElementById("map"), {
+    zoom: 4,
+    center: position,
+    mapId: "DEMO_MAP_ID",
+  });
+
+  // The marker, positioned at Uluru
+  const marker = new AdvancedMarkerElement({
+    map: map,
+    position: position,
+    title: "Uluru",
+  });
 }
